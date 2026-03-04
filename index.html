@@ -20,6 +20,7 @@
             --success: #4ade80;
             --danger: #f87171;
             --radius: 20px;
+            --input-bg: #1e293b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
@@ -55,13 +56,15 @@
         h1 { font-weight: 800; font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(to right, #818cf8, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         h2 { font-weight: 600; margin-bottom: 20px; }
 
-        input {
+        /* Inputs */
+        input:not(#manualInput) {
             width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--glass-border);
             background: rgba(0, 0, 0, 0.3); color: white; font-size: 1.1rem; margin-bottom: 20px;
             text-align: center; outline: none; transition: border-color 0.3s;
         }
-        input:focus { border-color: var(--primary); }
+        input:not(#manualInput):focus { border-color: var(--primary); }
 
+        /* Buttons */
         .btn {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white; border: none; padding: 14px 32px; font-size: 1.1rem;
@@ -77,18 +80,22 @@
         }
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
 
+        /* Screens */
         .screen { display: none; animation: slideUp 0.5s ease; }
         .screen.active { display: block; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* HUD */
         .hud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .hud-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; }
         .hud-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
         .hud-val { font-size: 1.2rem; font-weight: bold; color: white; }
 
+        /* Timer */
         .timer-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 25px; }
         .timer-fill { height: 100%; background: var(--success); width: 100%; transition: width 1s linear, background 0.3s; }
 
+        /* Hint Box */
         .hint-box {
             min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-size: 1.6rem; margin-bottom: 25px; padding: 20px;
@@ -97,41 +104,62 @@
         .correct-reveal { font-size: 2rem; color: var(--success); font-weight: 800; margin-top: 10px; text-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
         .wrong-reveal { font-size: 2rem; color: var(--danger); font-weight: 800; margin-top: 10px; }
 
-        /* --- MIC & VISUALIZER --- */
-        .mic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; }
+        /* Mic */
+        .mic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px; margin-bottom: 20px; }
         .mic-btn {
-            width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1);
-            border: 2px solid var(--primary); color: white; font-size: 2rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; margin-bottom: 15px;
+            width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1);
+            border: 2px solid var(--primary); color: white; font-size: 1.8rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
             transition: all 0.3s; position: relative; z-index: 2;
         }
         .mic-btn.listening { background: var(--primary); box-shadow: 0 0 30px var(--primary); animation: pulse 1.5s infinite; }
-        
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         #audioVis {
-            width: 100%; height: 40px; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 10px;
+            width: 100%; height: 30px; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 10px;
         }
-        .bar { width: 6px; height: 5px; background: var(--secondary); border-radius: 4px; transition: height 0.1s; }
+        .bar { width: 5px; height: 5px; background: var(--secondary); border-radius: 4px; transition: height 0.1s; }
         .mic-btn.listening ~ #audioVis .bar { animation: bounce 0.5s infinite ease-in-out alternate; }
-        
-        @keyframes bounce { to { height: 25px; } }
+        @keyframes bounce { to { height: 20px; } }
 
         .transcript { min-height: 24px; color: var(--text-muted); margin-top: 10px; font-style: italic; font-size: 0.9rem; }
 
-        /* --- ADMIN PANEL --- */
-        .admin-dashboard { text-align: left; }
-        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
-        .live-indicator { display: inline-block; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; margin-right: 8px; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.3; } }
-        
-        .admin-q-preview {
-            background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-top: 20px; border: 1px solid var(--glass-border);
+        /* Text Input */
+        .text-input-wrapper {
+            display: flex; flex-direction: column; width: 100%; margin-top: 10px; gap: 8px; z-index: 20;
+            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;
         }
-        .admin-q-preview h4 { color: var(--secondary); margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
-        .admin-q-text { font-size: 1.1rem; margin-bottom: 5px; font-weight: 600; }
-        .admin-a-text { color: var(--success); font-size: 0.9rem; margin-top: 5px; }
+        .input-label { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        #manualInput {
+            flex-grow: 1; background: var(--input-bg) !important; border: 2px solid var(--primary) !important;
+            color: white !important; text-align: left !important; margin-bottom: 0 !important;
+            padding: 15px !important; font-size: 1.1rem !important; border-radius: 12px !important; width: 100%;
+        }
+        .send-btn {
+            background: var(--primary); color: white; border: none; border-radius: 12px;
+            padding: 0 20px; font-size: 1.2rem; cursor: pointer; margin-top: 8px; height: 54px;
+            display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+        }
+        .send-btn:hover { background: var(--secondary); }
 
+        /* --- ADMIN READ-ONLY MODE --- */
+        .admin-mode .mic-btn, .admin-mode .send-btn, .admin-mode #nextHintBtn {
+            pointer-events: none !important;
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+        }
+        .admin-mode #manualInput {
+            pointer-events: none !important;
+            opacity: 0.8 !important;
+            cursor: default !important;
+        }
+        .admin-badge {
+            background: var(--danger); color: white; padding: 5px 10px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;
+        }
+
+        /* Admin Panel (Login Only) */
+        .admin-login-card { max-width: 400px; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -158,9 +186,13 @@
             </div>
         </div>
 
-        <!-- 3. GAME SCREEN -->
+        <!-- 3. GAME SCREEN (Used by BOTH Player and Admin) -->
         <div id="gameScreen" class="screen">
-            <div class="glass-card">
+            <div class="glass-card" id="gameCard">
+                
+                <!-- Admin Badge (Only visible for Admin) -->
+                <div id="adminBadge" class="admin-badge hidden">ADMIN VIEW MODE</div>
+
                 <!-- HUD -->
                 <div class="hud-grid">
                     <div class="hud-item">
@@ -184,16 +216,25 @@
                 <button id="nextHintBtn" class="btn btn-secondary" style="width: auto; padding: 8px 20px; font-size: 0.9rem;" onclick="window.app.game.revealNextHint()">Next Hint</button>
                 <div style="margin-bottom: 15px; color: var(--secondary); font-weight: bold;">Lives: <span id="livesCount">3</span></div>
 
-                <!-- Mic & Visualizer -->
+                <!-- Game Controls -->
                 <div id="gameControls">
+                    <!-- Mic Section -->
                     <div class="mic-container">
                         <button class="mic-btn" id="micBtn">🎤</button>
-                        <!-- Audio Visualizer Bars -->
                         <div id="audioVis">
                             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
                             <div class="bar"></div><div class="bar"></div>
                         </div>
                         <div class="transcript" id="transcript">Tap mic to speak</div>
+                    </div>
+
+                    <!-- Text Input Section -->
+                    <div class="text-input-wrapper">
+                        <div class="input-label">Or type your answer:</div>
+                        <div style="display: flex; gap: 10px; width: 100%;">
+                            <input type="text" id="manualInput" placeholder="Type here..." autocomplete="off">
+                            <button class="send-btn" id="sendTextBtn">➤</button>
+                        </div>
                     </div>
                 </div>
 
@@ -216,42 +257,12 @@
 
         <!-- 5. ADMIN LOGIN -->
         <div id="adminLoginScreen" class="screen">
-            <div class="glass-card">
+            <div class="glass-card admin-login-card">
                 <h2>Admin Panel</h2>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Watch a player live</p>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Enter the player's name to watch their screen live.</p>
                 <input type="text" id="adminWatchInput" placeholder="Enter Player Name">
                 <button class="btn" onclick="window.app.admin.startWatching()">Watch Live</button>
                 <button class="btn btn-secondary" onclick="window.app.ui.showScreen('landingScreen')">Back</button>
-            </div>
-        </div>
-
-        <!-- 6. ADMIN DASHBOARD -->
-        <div id="adminDashboardScreen" class="screen">
-            <div class="glass-card admin-dashboard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>Live Match</h2>
-                    <button class="btn-secondary" style="width: auto; padding: 5px 15px; font-size: 0.8rem; border-radius: 10px;" onclick="location.reload()">Exit</button>
-                </div>
-                
-                <div class="stat-row">
-                    <span style="color: var(--text-muted)">Player</span>
-                    <span style="font-weight: bold; font-size: 1.2rem;" id="adminPlayerName">--</span>
-                </div>
-                <div class="stat-row">
-                    <span>Status</span>
-                    <span id="adminStatus" style="font-weight: bold;">Searching...</span>
-                </div>
-                <div class="stat-row">
-                    <span>Score</span>
-                    <span id="adminScore" style="font-size: 1.5rem; color: var(--success);">0</span>
-                </div>
-
-                <!-- NEW: Live Question Preview -->
-                <div class="admin-q-preview">
-                    <h4><span class="live-indicator"></span>Current Question</h4>
-                    <div class="admin-q-text" id="adminQText">Waiting...</div>
-                    <div class="admin-a-text">Answer: <strong id="adminQAnswer">...</strong></div>
-                </div>
             </div>
         </div>
     </main>
@@ -296,17 +307,25 @@
                         nextBtnContainer: document.getElementById('nextBtnContainer'),
                         finalScore: document.getElementById('finalScore'),
                         saveStatus: document.getElementById('saveStatus'),
-                        // Admin Elements
-                        adminPlayerName: document.getElementById('adminPlayerName'),
-                        adminStatus: document.getElementById('adminStatus'),
-                        adminScore: document.getElementById('adminScore'),
-                        adminQText: document.getElementById('adminQText'),
-                        adminQAnswer: document.getElementById('adminQAnswer')
+                        manualInput: document.getElementById('manualInput'),
+                        sendTextBtn: document.getElementById('sendTextBtn'),
+                        gameCard: document.getElementById('gameCard'),
+                        adminBadge: document.getElementById('adminBadge')
                     },
                     showScreen(id) {
                         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                         const target = document.getElementById(id);
                         if(target) target.classList.add('active');
+                    },
+                    setAdminMode(isAdmin) {
+                        if(isAdmin) {
+                            this.els.gameCard.classList.add('admin-mode');
+                            this.els.adminBadge.classList.remove('hidden');
+                            this.els.micBtn.classList.remove('listening'); // Stop visual pulse
+                        } else {
+                            this.els.gameCard.classList.remove('admin-mode');
+                            this.els.adminBadge.classList.add('hidden');
+                        }
                     },
                     resetForQuestion() {
                         this.els.hintDisplay.style.background = "rgba(255,255,255,0.05)";
@@ -317,12 +336,14 @@
                         this.els.nextBtnContainer.classList.add('hidden');
                         this.els.nextHintBtn.classList.remove('hidden');
                         this.els.micBtn.classList.remove('hidden');
+                        this.els.manualInput.value = "";
+                        this.els.manualInput.disabled = false;
+                        this.els.sendTextBtn.disabled = false;
                     },
                     showRoundEnd(isWin, answer) {
                         this.els.gameControls.classList.add('hidden');
                         this.els.nextHintBtn.classList.add('hidden');
                         this.els.nextBtnContainer.classList.remove('hidden');
-
                         if (isWin) {
                             this.els.hintDisplay.innerHTML = `<span class="correct-reveal">Correct!</span>`;
                             this.els.transcript.textContent = "Well done!";
@@ -349,6 +370,7 @@
                     timer: null,
                     playerName: "",
                     isPlaying: false,
+                    isPlayer: true, // True for player, False for admin
 
                     async initGame() {
                         this.playerName = document.getElementById('playerNameInput').value.trim();
@@ -366,7 +388,9 @@
                         this.data = this.data.sort(() => 0.5 - Math.random()).slice(0, 10);
                         this.idx = 0;
                         this.score = 0;
+                        this.isPlayer = true;
                         
+                        window.app.ui.setAdminMode(false);
                         await this.updateLiveSession('playing');
                         window.app.ui.showScreen('gameScreen');
                         this.loadQuestion();
@@ -391,7 +415,6 @@
                         window.app.ui.resetForQuestion();
                         this.showHint();
                         this.startTimer(30);
-                        // Update DB with current Q details for Admin
                         this.updateLiveSession('playing'); 
                     },
 
@@ -403,6 +426,7 @@
                         if (this.hintIdx < this.currentQ.hints.length - 1) {
                             this.hintIdx++;
                             this.showHint();
+                            this.updateLiveSession('playing'); // Sync hint index
                         }
                         window.app.ui.els.nextHintBtn.disabled = (this.hintIdx >= this.currentQ.hints.length - 1);
                     },
@@ -423,16 +447,22 @@
                             if (left <= 0) {
                                 this.handleLoss("Time's up!");
                             }
+                            
+                            // Sync Timer every second
+                            if (this.isPlayer && left % 1 === 0) {
+                                this.updateLiveSession('playing', left);
+                            }
                         }, 1000);
                     },
 
-                    async handleGuess(text) {
+                    async handleGuess(text, source = "voice") {
                         if (!this.isPlaying) return;
                         
                         const input = text.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
                         const answer = this.currentQ.answer.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
 
-                        window.app.ui.setMicStatus(`You said: "${text}"`);
+                        const prefix = source === "text" ? "You typed" : "You said";
+                        window.app.ui.setMicStatus(`${prefix}: "${text}"`);
 
                         if (input === answer) {
                             this.isPlaying = false;
@@ -445,11 +475,14 @@
                         } else {
                             this.lives--;
                             window.app.ui.els.livesCount.textContent = this.lives;
+                            await this.updateLiveSession('playing', null, this.lives); // Sync Lives
+                            
                             if (this.lives <= 0) {
                                 this.handleLoss("Wrong!");
                             } else {
                                 window.app.ui.setMicStatus("Wrong! Try again.");
                                 window.app.ui.els.transcript.style.color = "var(--danger)";
+                                if(source === "text") window.app.ui.els.manualInput.focus();
                             }
                         }
                     },
@@ -477,22 +510,28 @@
                         } catch (e) { console.error(e); window.app.ui.els.saveStatus.textContent = "Save Error"; }
                     },
 
-                    async updateLiveSession(status) {
+                    // --- SYNC FUNCTION ---
+                    async updateLiveSession(status, timeLeft = null, livesOverride = null) {
+                        if(!this.isPlayer) return; // Only player updates DB
+
                         try {
-                            // Prepare payload with new Question/Answer fields
                             const payload = {
                                 user_name: this.playerName,
                                 current_score: this.score,
-                                current_question: this.idx + 1,
+                                question_number: this.idx + 1,
                                 status: status,
                                 last_updated: new Date()
                             };
 
-                            // Only include Q details if we are actually playing and have a Q loaded
                             if (status === 'playing' && this.currentQ) {
                                 payload.current_question_answer = this.currentQ.answer;
-                                // We send the CURRENT hint so Admin sees what player sees
                                 payload.current_question_hint = this.currentQ.hints[this.hintIdx] || this.currentQ.hints[0];
+                                payload.hint_index = this.hintIdx;
+                                payload.lives_remaining = livesOverride !== null ? livesOverride : this.lives;
+                                payload.timer_remaining = timeLeft !== null ? timeLeft : (this.isPlaying ? 30 : 0); // Default or current
+                                // Sync what user typed in text bar
+                                const textVal = window.app.ui.els.manualInput.value;
+                                if(textVal) payload.last_input = textVal;
                             }
 
                             await supabaseClient.from('live_sessions').upsert(payload, { onConflict: 'user_name' });
@@ -507,90 +546,122 @@
                         const name = document.getElementById('adminWatchInput').value.trim();
                         if (!name) return alert("Enter player name");
                         
-                        window.app.ui.showScreen('adminDashboardScreen');
-                        window.app.ui.els.adminPlayerName.textContent = name;
+                        window.app.game.isPlayer = false; // Set to admin mode
+                        window.app.ui.setAdminMode(true);
+                        window.app.ui.showScreen('gameScreen');
                         
-                        // Initial Fetch
                         const { data, error } = await supabaseClient
                             .from('live_sessions')
                             .select('*')
                             .eq('user_name', name)
                             .single();
                         
-                        if (data) this.updateDashboard(data);
-                        else window.app.ui.els.adminStatus.textContent = "Player not found";
+                        if (data) this.syncUI(data);
+                        else alert("Player not found or game not started.");
 
-                        // Realtime Subscription
                         if (this.channel) this.channel.unsubscribe();
 
                         this.channel = supabaseClient
-                            .channel(`live-${name}`)
+                            .channel(`live-admin-${name}`)
                             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
-                                this.updateDashboard(payload.new);
+                                this.syncUI(payload.new);
                             })
                             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
-                                this.updateDashboard(payload.new);
+                                this.syncUI(payload.new);
                             })
                             .subscribe();
                     },
 
-                    updateDashboard(data) {
-                        window.app.ui.els.adminScore.textContent = data.current_score;
-                        window.app.ui.els.adminStatus.textContent = data.status.toUpperCase();
-                        window.app.ui.els.adminStatus.style.color = data.status === 'playing' ? 'var(--success)' : 'var(--text-muted)';
+                    syncUI(data) {
+                        // Update Stats
+                        window.app.ui.els.scoreVal.textContent = data.current_score;
+                        window.app.ui.els.qCounter.textContent = `${data.question_number}/10`;
+                        window.app.ui.els.livesCount.textContent = data.lives_remaining;
                         
-                        // Update Admin Question Preview
+                        // Update Timer
+                        if(data.timer_remaining >= 0) {
+                            const pct = (data.timer_remaining / 30) * 100;
+                            window.app.ui.els.timerBar.style.width = `${pct}%`;
+                            if(data.timer_remaining <= 10) window.app.ui.els.timerBar.style.backgroundColor = 'var(--danger)';
+                            else window.app.ui.els.timerBar.style.backgroundColor = 'var(--success)';
+                        }
+
+                        // Update Hint
                         if (data.status === 'playing' && data.current_question_hint) {
-                            window.app.ui.els.adminQText.textContent = data.current_question_hint;
-                            window.app.ui.els.adminQAnswer.textContent = data.current_question_answer;
-                        } else {
-                            window.app.ui.els.adminQText.textContent = "Waiting for game...";
-                            window.app.ui.els.adminQAnswer.textContent = "--";
+                            window.app.ui.els.hintDisplay.textContent = data.current_question_hint;
+                            // Simulate next hint button state
+                            window.app.ui.els.nextHintBtn.disabled = (data.hint_index > 0); // Simplification
+                            window.app.ui.els.nextHintBtn.textContent = data.hint_index > 0 ? "Next Hint (Locked)" : "Show Hint 1";
+                        } else if (data.status === 'finished') {
+                            window.app.ui.hintDisplay.textContent = "Game Over";
+                            // Show result screen if finished? For now, stick to syncing the game card.
+                        }
+
+                        // Update Text Input (What player typed)
+                        if(data.last_input) {
+                            window.app.ui.els.manualInput.value = data.last_input;
+                        }
+                        
+                        // Update Transcript
+                        if(data.status === 'playing') {
+                            window.app.ui.els.transcript.textContent = "Live View...";
                         }
                     }
                 };
 
-                // --- IMPROVED MIC SYSTEM ---
+                // --- MIC SYSTEM ---
                 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                     const r = new SpeechRecognition();
-                    r.continuous = false; r.lang = 'en-US';
-                    r.maxAlternatives = 1;
-
+                    r.continuous = false; r.lang = 'en-US'; r.maxAlternatives = 1;
                     const micBtn = window.app.ui.els.micBtn;
                     
                     r.onstart = () => {
-                        micBtn.classList.add('listening');
+                        if(window.app.game.isPlayer) micBtn.classList.add('listening');
                         window.app.ui.setMicStatus("Listening...");
                     };
-                    
                     r.onend = () => {
-                        micBtn.classList.remove('listening');
-                        // If game is still playing and we didn't get a result, user might want to tap again
+                        if(window.app.game.isPlayer) micBtn.classList.remove('listening');
                         if (window.app.game.isPlaying && window.app.ui.els.transcript.textContent === "Listening...") {
                              window.app.ui.setMicStatus("Tap mic to try again");
                         }
                     };
-
-                    r.onresult = (e) => {
-                        window.app.game.handleGuess(e.results[0][0].transcript);
-                    };
-                    
+                    r.onresult = (e) => { window.app.game.handleGuess(e.results[0][0].transcript, "voice"); };
                     r.onerror = (event) => {
-                        micBtn.classList.remove('listening');
+                        if(window.app.game.isPlayer) micBtn.classList.remove('listening');
                         window.app.ui.setMicStatus("Error: " + event.error);
                         window.app.ui.els.transcript.style.color = "var(--danger)";
                     };
-
                     micBtn.onclick = () => { 
-                        if(window.app.game.isPlaying) {
-                            try { r.start(); } catch(e){ r.stop(); }
-                        }
+                        if(window.app.game.isPlaying && window.app.game.isPlayer) { 
+                            try { r.start(); } catch(e){ r.stop(); } 
+                        } 
                     };
                 } else {
                     window.app.ui.els.micBtn.style.display = 'none';
                     window.app.ui.els.transcript.textContent = "Speech API not supported";
                 }
+
+                // --- TEXT INPUT SYSTEM ---
+                const manualInput = window.app.ui.els.manualInput;
+                const sendBtn = window.app.ui.els.sendTextBtn;
+
+                function submitText() {
+                    const text = manualInput.value;
+                    if(!text) return;
+                    window.app.game.handleGuess(text, "text");
+                    manualInput.value = ''; 
+                }
+
+                sendBtn.addEventListener('click', submitText);
+                manualInput.addEventListener('keydown', (e) => {
+                    if(e.key === 'Enter') submitText();
+                });
+                
+                // Sync text input as user types for Admin to see
+                manualInput.addEventListener('input', () => {
+                   if(window.app.game.isPlayer) window.app.game.updateLiveSession('playing');
+                });
 
                 console.log("App Initialized Successfully");
             } catch (err) {
