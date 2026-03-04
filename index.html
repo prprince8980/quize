@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Quiz Pro</title>
-    <!-- Fonts -->
+    <title>Voice Quiz Pro (Admin Live)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
@@ -39,7 +36,6 @@
             background-attachment: fixed;
         }
 
-        /* --- Glass Card Style --- */
         .glass-card {
             background: var(--glass);
             backdrop-filter: blur(16px);
@@ -49,7 +45,7 @@
             border-radius: var(--radius);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             width: 100%;
-            max-width: 480px;
+            max-width: 500px;
             text-align: center;
             position: relative;
             z-index: 10;
@@ -59,115 +55,84 @@
         h1 { font-weight: 800; font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(to right, #818cf8, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         h2 { font-weight: 600; margin-bottom: 20px; }
 
-        /* --- Inputs & Buttons --- */
         input {
-            width: 100%;
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-align: center;
-            outline: none;
-            transition: border-color 0.3s;
+            width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3); color: white; font-size: 1.1rem; margin-bottom: 20px;
+            text-align: center; outline: none; transition: border-color 0.3s;
         }
         input:focus { border-color: var(--primary); }
 
         .btn {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
+            color: white; border: none; padding: 14px 32px; font-size: 1.1rem;
+            border-radius: 50px; cursor: pointer; font-weight: 600; width: 100%;
             transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4);
-            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4); margin-bottom: 10px;
         }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(129, 140, 248, 0.6); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            box-shadow: none;
-            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid var(--glass-border);
         }
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
 
-        /* --- Screens --- */
         .screen { display: none; animation: slideUp 0.5s ease; }
         .screen.active { display: block; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- HUD --- */
-        .hud-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .hud-item {
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .hud-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .hud-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; }
         .hud-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
         .hud-val { font-size: 1.2rem; font-weight: bold; color: white; }
 
-        /* --- Timer --- */
         .timer-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 25px; }
         .timer-fill { height: 100%; background: var(--success); width: 100%; transition: width 1s linear, background 0.3s; }
 
-        /* --- Hint Box --- */
         .hint-box {
-            min-height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
-            border: 1px dashed var(--glass-border);
+            min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 1.6rem; margin-bottom: 25px; padding: 20px;
+            background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px dashed var(--glass-border);
         }
         .correct-reveal { font-size: 2rem; color: var(--success); font-weight: 800; margin-top: 10px; text-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
         .wrong-reveal { font-size: 2rem; color: var(--danger); font-weight: 800; margin-top: 10px; }
 
-        /* --- Mic --- */
+        /* --- MIC & VISUALIZER --- */
+        .mic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; }
         .mic-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid var(--primary);
-            color: white; font-size: 2rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto; transition: all 0.3s;
+            width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1);
+            border: 2px solid var(--primary); color: white; font-size: 2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 15px;
+            transition: all 0.3s; position: relative; z-index: 2;
         }
         .mic-btn.listening { background: var(--primary); box-shadow: 0 0 30px var(--primary); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* --- Admin Panel --- */
+        #audioVis {
+            width: 100%; height: 40px; display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 10px;
+        }
+        .bar { width: 6px; height: 5px; background: var(--secondary); border-radius: 4px; transition: height 0.1s; }
+        .mic-btn.listening ~ #audioVis .bar { animation: bounce 0.5s infinite ease-in-out alternate; }
+        
+        @keyframes bounce { to { height: 25px; } }
+
+        .transcript { min-height: 24px; color: var(--text-muted); margin-top: 10px; font-style: italic; font-size: 0.9rem; }
+
+        /* --- ADMIN PANEL --- */
         .admin-dashboard { text-align: left; }
         .stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
         .live-indicator { display: inline-block; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; margin-right: 8px; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.3; } }
         
-        .transcript { min-height: 24px; color: var(--text-muted); margin-top: 15px; font-style: italic; font-size: 0.9rem; }
+        .admin-q-preview {
+            background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-top: 20px; border: 1px solid var(--glass-border);
+        }
+        .admin-q-preview h4 { color: var(--secondary); margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
+        .admin-q-text { font-size: 1.1rem; margin-bottom: 5px; font-weight: 600; }
+        .admin-a-text { color: var(--success); font-size: 0.9rem; margin-top: 5px; }
 
-        /* --- Helper Classes --- */
         .hidden { display: none !important; }
-        .text-center { text-align: center; }
-        .mt-2 { margin-top: 20px; }
-
     </style>
 </head>
 <body>
@@ -178,7 +143,6 @@
             <div class="glass-card">
                 <h1>Voice Quiz</h1>
                 <p style="color: var(--text-muted); margin-bottom: 30px;">Real-time Multiplayer Experience</p>
-                
                 <button class="btn" onclick="window.app.ui.showScreen('nameScreen');">Play as Player</button>
                 <button class="btn btn-secondary" onclick="window.app.ui.showScreen('adminLoginScreen');">Admin Watch Mode</button>
             </div>
@@ -220,10 +184,17 @@
                 <button id="nextHintBtn" class="btn btn-secondary" style="width: auto; padding: 8px 20px; font-size: 0.9rem;" onclick="window.app.game.revealNextHint()">Next Hint</button>
                 <div style="margin-bottom: 15px; color: var(--secondary); font-weight: bold;">Lives: <span id="livesCount">3</span></div>
 
-                <!-- Mic & Transcript -->
+                <!-- Mic & Visualizer -->
                 <div id="gameControls">
-                    <button class="mic-btn" id="micBtn">🎤</button>
-                    <div class="transcript" id="transcript">Tap mic to speak</div>
+                    <div class="mic-container">
+                        <button class="mic-btn" id="micBtn">🎤</button>
+                        <!-- Audio Visualizer Bars -->
+                        <div id="audioVis">
+                            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                            <div class="bar"></div><div class="bar"></div>
+                        </div>
+                        <div class="transcript" id="transcript">Tap mic to speak</div>
+                    </div>
                 </div>
 
                 <!-- NEXT BUTTON (Hidden by default) -->
@@ -256,7 +227,7 @@
 
         <!-- 6. ADMIN DASHBOARD -->
         <div id="adminDashboardScreen" class="screen">
-            <div class="glass-card">
+            <div class="glass-card admin-dashboard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>Live Match</h2>
                     <button class="btn-secondary" style="width: auto; padding: 5px 15px; font-size: 0.8rem; border-radius: 10px;" onclick="location.reload()">Exit</button>
@@ -271,39 +242,33 @@
                     <span id="adminStatus" style="font-weight: bold;">Searching...</span>
                 </div>
                 <div class="stat-row">
-                    <span>Current Question</span>
-                    <span id="adminQ">0/10</span>
-                </div>
-                <div class="stat-row" style="border: none;">
                     <span>Score</span>
                     <span id="adminScore" style="font-size: 1.5rem; color: var(--success);">0</span>
                 </div>
 
-                <div class="mt-2 text-center" style="color: var(--text-muted); font-size: 0.8rem;">
-                    <span class="live-indicator"></span>Live updates active
+                <!-- NEW: Live Question Preview -->
+                <div class="admin-q-preview">
+                    <h4><span class="live-indicator"></span>Current Question</h4>
+                    <div class="admin-q-text" id="adminQText">Waiting...</div>
+                    <div class="admin-a-text">Answer: <strong id="adminQAnswer">...</strong></div>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // --- APP CONTAINER ---
-        // We wrap everything in 'window.app' to ensure global access
         window.app = {};
 
         window.onload = function() {
             try {
-                // 1. Initialize Libraries
                 let supabaseClient = null;
                 if (typeof supabase !== 'undefined') {
                     supabaseClient = supabase.createClient("https://worcmjutlantjutpdsjq.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvcmNtanV0bGFudGp1dHBkc2pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODczNzIsImV4cCI6MjA4NTM2MzM3Mn0.Od0wLqh0xGxGWiDA3SDHybClPb4SZanbHu6p0wm_KUU");
                 } else {
-                    console.error("Supabase library failed to load.");
-                    alert("Error: Could not load Game Library. Please check your internet connection.");
+                    alert("Error: Game Library failed to load.");
                     return; 
                 }
 
-                // --- DEMO DATA ---
                 const DEMO_DATA = [
                     { answer: "Paris", hints: ["Capital of France", "Eiffel Tower", "City of Light", "Seine River", "Art Museum"] },
                     { answer: "Apple", hints: ["Fruit", "Red or Green", "Grows on trees", "Tech Company", "Keeps doctor away"] },
@@ -317,7 +282,6 @@
                     { answer: "Coffee", hints: ["Drink", "Caffeine", "Hot", "Beans", "Morning routine"] }
                 ];
 
-                // --- UI MANAGER ---
                 window.app.ui = {
                     els: {
                         timerBar: document.getElementById('timerBar'),
@@ -330,19 +294,19 @@
                         nextHintBtn: document.getElementById('nextHintBtn'),
                         gameControls: document.getElementById('gameControls'),
                         nextBtnContainer: document.getElementById('nextBtnContainer'),
-                        nextQuestionBtn: document.getElementById('nextQuestionBtn'),
                         finalScore: document.getElementById('finalScore'),
                         saveStatus: document.getElementById('saveStatus'),
+                        // Admin Elements
                         adminPlayerName: document.getElementById('adminPlayerName'),
                         adminStatus: document.getElementById('adminStatus'),
-                        adminQ: document.getElementById('adminQ'),
-                        adminScore: document.getElementById('adminScore')
+                        adminScore: document.getElementById('adminScore'),
+                        adminQText: document.getElementById('adminQText'),
+                        adminQAnswer: document.getElementById('adminQAnswer')
                     },
                     showScreen(id) {
                         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                         const target = document.getElementById(id);
                         if(target) target.classList.add('active');
-                        else console.error("Screen not found:", id);
                     },
                     resetForQuestion() {
                         this.els.hintDisplay.style.background = "rgba(255,255,255,0.05)";
@@ -355,10 +319,8 @@
                         this.els.micBtn.classList.remove('hidden');
                     },
                     showRoundEnd(isWin, answer) {
-                        this.els.gameControls.classList.add('hidden'); // Hide Mic
-                        this.els.nextHintBtn.classList.add('hidden');   // Hide Hint Button
-                        
-                        // Show Next Button
+                        this.els.gameControls.classList.add('hidden');
+                        this.els.nextHintBtn.classList.add('hidden');
                         this.els.nextBtnContainer.classList.remove('hidden');
 
                         if (isWin) {
@@ -371,10 +333,12 @@
                             this.els.transcript.textContent = "Better luck next time.";
                             this.els.transcript.style.color = "var(--danger)";
                         }
+                    },
+                    setMicStatus(status) {
+                        this.els.transcript.textContent = status;
                     }
                 };
 
-                // --- GAME ENGINE ---
                 window.app.game = {
                     data: [],
                     idx: 0,
@@ -390,7 +354,6 @@
                         this.playerName = document.getElementById('playerNameInput').value.trim();
                         if (!this.playerName) return alert("Please enter a name!");
 
-                        // Fetch Data
                         try {
                             const { data: rows, error } = await supabaseClient.from('game_data').select('*');
                             if (error) throw error;
@@ -400,14 +363,11 @@
                             this.data = DEMO_DATA;
                         }
 
-                        // Shuffle & Slice
                         this.data = this.data.sort(() => 0.5 - Math.random()).slice(0, 10);
                         this.idx = 0;
                         this.score = 0;
                         
-                        // Initialize Live Session
                         await this.updateLiveSession('playing');
-
                         window.app.ui.showScreen('gameScreen');
                         this.loadQuestion();
                     },
@@ -431,7 +391,8 @@
                         window.app.ui.resetForQuestion();
                         this.showHint();
                         this.startTimer(30);
-                        this.updateLiveSession('playing'); // Update DB
+                        // Update DB with current Q details for Admin
+                        this.updateLiveSession('playing'); 
                     },
 
                     showHint() {
@@ -471,28 +432,23 @@
                         const input = text.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
                         const answer = this.currentQ.answer.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
 
-                        window.app.ui.els.transcript.textContent = `You said: "${text}"`;
+                        window.app.ui.setMicStatus(`You said: "${text}"`);
 
                         if (input === answer) {
-                            // WIN
                             this.isPlaying = false;
                             clearInterval(this.timer);
                             const points = Math.max(0, 6 - this.hintIdx);
                             this.score += points;
-                            if (typeof confetti !== 'undefined') {
-                                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                            }
-                            
+                            if (typeof confetti !== 'undefined') confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                             window.app.ui.showRoundEnd(true);
-                            await this.updateLiveSession('playing'); // Update score
+                            await this.updateLiveSession('playing');
                         } else {
-                            // WRONG
                             this.lives--;
                             window.app.ui.els.livesCount.textContent = this.lives;
                             if (this.lives <= 0) {
                                 this.handleLoss("Wrong!");
                             } else {
-                                window.app.ui.els.transcript.textContent = "Wrong! Try again.";
+                                window.app.ui.setMicStatus("Wrong! Try again.");
                                 window.app.ui.els.transcript.style.color = "var(--danger)";
                             }
                         }
@@ -521,21 +477,29 @@
                         } catch (e) { console.error(e); window.app.ui.els.saveStatus.textContent = "Save Error"; }
                     },
 
-                    // --- LIVE DB UPDATE ---
                     async updateLiveSession(status) {
                         try {
-                            await supabaseClient.from('live_sessions').upsert({
+                            // Prepare payload with new Question/Answer fields
+                            const payload = {
                                 user_name: this.playerName,
                                 current_score: this.score,
                                 current_question: this.idx + 1,
                                 status: status,
                                 last_updated: new Date()
-                            }, { onConflict: 'user_name' });
+                            };
+
+                            // Only include Q details if we are actually playing and have a Q loaded
+                            if (status === 'playing' && this.currentQ) {
+                                payload.current_question_answer = this.currentQ.answer;
+                                // We send the CURRENT hint so Admin sees what player sees
+                                payload.current_question_hint = this.currentQ.hints[this.hintIdx] || this.currentQ.hints[0];
+                            }
+
+                            await supabaseClient.from('live_sessions').upsert(payload, { onConflict: 'user_name' });
                         } catch (e) { console.error("Live update failed", e); }
                     }
                 };
 
-                // --- ADMIN LOGIC ---
                 window.app.admin = {
                     channel: null,
                     
@@ -572,21 +536,57 @@
 
                     updateDashboard(data) {
                         window.app.ui.els.adminScore.textContent = data.current_score;
-                        window.app.ui.els.adminQ.textContent = `${data.current_question}/10`;
                         window.app.ui.els.adminStatus.textContent = data.status.toUpperCase();
                         window.app.ui.els.adminStatus.style.color = data.status === 'playing' ? 'var(--success)' : 'var(--text-muted)';
+                        
+                        // Update Admin Question Preview
+                        if (data.status === 'playing' && data.current_question_hint) {
+                            window.app.ui.els.adminQText.textContent = data.current_question_hint;
+                            window.app.ui.els.adminQAnswer.textContent = data.current_question_answer;
+                        } else {
+                            window.app.ui.els.adminQText.textContent = "Waiting for game...";
+                            window.app.ui.els.adminQAnswer.textContent = "--";
+                        }
                     }
                 };
 
-                // --- SPEECH RECOGNITION ---
+                // --- IMPROVED MIC SYSTEM ---
                 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                     const r = new SpeechRecognition();
                     r.continuous = false; r.lang = 'en-US';
-                    r.onstart = () => window.app.ui.els.micBtn.classList.add('listening');
-                    r.onend = () => window.app.ui.els.micBtn.classList.remove('listening');
-                    r.onresult = (e) => window.app.game.handleGuess(e.results[0][0].transcript);
-                    window.app.ui.els.micBtn.onclick = () => { if(window.app.game.isPlaying) r.start(); };
+                    r.maxAlternatives = 1;
+
+                    const micBtn = window.app.ui.els.micBtn;
+                    
+                    r.onstart = () => {
+                        micBtn.classList.add('listening');
+                        window.app.ui.setMicStatus("Listening...");
+                    };
+                    
+                    r.onend = () => {
+                        micBtn.classList.remove('listening');
+                        // If game is still playing and we didn't get a result, user might want to tap again
+                        if (window.app.game.isPlaying && window.app.ui.els.transcript.textContent === "Listening...") {
+                             window.app.ui.setMicStatus("Tap mic to try again");
+                        }
+                    };
+
+                    r.onresult = (e) => {
+                        window.app.game.handleGuess(e.results[0][0].transcript);
+                    };
+                    
+                    r.onerror = (event) => {
+                        micBtn.classList.remove('listening');
+                        window.app.ui.setMicStatus("Error: " + event.error);
+                        window.app.ui.els.transcript.style.color = "var(--danger)";
+                    };
+
+                    micBtn.onclick = () => { 
+                        if(window.app.game.isPlaying) {
+                            try { r.start(); } catch(e){ r.stop(); }
+                        }
+                    };
                 } else {
                     window.app.ui.els.micBtn.style.display = 'none';
                     window.app.ui.els.transcript.textContent = "Speech API not supported";
