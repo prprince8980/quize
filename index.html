@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Quiz Pro (Admin Live)</title>
+    <title>Voice Quiz (Single Player / Admin)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -158,8 +158,15 @@
             font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;
         }
 
-        /* Admin Panel (Login Only) */
-        .admin-login-card { max-width: 400px; }
+        /* Waiting Screen */
+        .loading-spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            width: 40px; height: 40px; border-radius: 50%;
+            border-left-color: var(--primary);
+            animation: spin 1s linear infinite; margin: 0 auto 20px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -171,18 +178,18 @@
             <div class="glass-card">
                 <h1>Voice Quiz</h1>
                 <p style="color: var(--text-muted); margin-bottom: 30px;">Real-time Multiplayer Experience</p>
-                <button class="btn" onclick="window.app.ui.showScreen('nameScreen');">Play as Player</button>
-                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('adminLoginScreen');">Admin Watch Mode</button>
+                <button class="btn" onclick="window.app.game.initGame()">Start Game (Player)</button>
+                <button class="btn btn-secondary" onclick="window.app.admin.startWatching()">Admin Watch Mode</button>
             </div>
         </div>
 
-        <!-- 2. PLAYER NAME INPUT -->
-        <div id="nameScreen" class="screen">
+        <!-- 2. ADMIN WAITING SCREEN (Only shown if no game is active) -->
+        <div id="adminWaitingScreen" class="screen">
             <div class="glass-card">
-                <h2>Who are you?</h2>
-                <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="12">
-                <button class="btn" onclick="window.app.game.initGame()">Start Game</button>
-                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('landingScreen')">Back</button>
+                <div class="loading-spinner"></div>
+                <h2>Waiting for Player</h2>
+                <p style="color: var(--text-muted);">Monitoring for active game session...</p>
+                <button class="btn btn-secondary" style="margin-top:20px;" onclick="location.reload()">Exit</button>
             </div>
         </div>
 
@@ -254,21 +261,13 @@
                 <button class="btn" onclick="location.reload()">Play Again</button>
             </div>
         </div>
-
-        <!-- 5. ADMIN LOGIN -->
-        <div id="adminLoginScreen" class="screen">
-            <div class="glass-card admin-login-card">
-                <h2>Admin Panel</h2>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Enter the player's name to watch their screen live.</p>
-                <input type="text" id="adminWatchInput" placeholder="Enter Player Name">
-                <button class="btn" onclick="window.app.admin.startWatching()">Watch Live</button>
-                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('landingScreen')">Back</button>
-            </div>
-        </div>
     </main>
 
     <script>
         window.app = {};
+
+        // HARDCODED SINGLE USER
+        const PLAYER_ID = "player";
 
         window.onload = function() {
             try {
@@ -368,14 +367,12 @@
                     hintIdx: 0,
                     currentQ: null,
                     timer: null,
-                    playerName: "",
+                    playerName: PLAYER_ID,
                     isPlaying: false,
-                    isPlayer: true, // True for player, False for admin
+                    isPlayer: true,
 
                     async initGame() {
-                        this.playerName = document.getElementById('playerNameInput').value.trim();
-                        if (!this.playerName) return alert("Please enter a name!");
-
+                        // No Name Input anymore
                         try {
                             const { data: rows, error } = await supabaseClient.from('game_data').select('*');
                             if (error) throw error;
@@ -448,7 +445,6 @@
                                 this.handleLoss("Time's up!");
                             }
                             
-                            // Sync Timer every second
                             if (this.isPlayer && left % 1 === 0) {
                                 this.updateLiveSession('playing', left);
                             }
@@ -475,7 +471,7 @@
                         } else {
                             this.lives--;
                             window.app.ui.els.livesCount.textContent = this.lives;
-                            await this.updateLiveSession('playing', null, this.lives); // Sync Lives
+                            await this.updateLiveSession('playing', null, this.lives);
                             
                             if (this.lives <= 0) {
                                 this.handleLoss("Wrong!");
@@ -510,9 +506,8 @@
                         } catch (e) { console.error(e); window.app.ui.els.saveStatus.textContent = "Save Error"; }
                     },
 
-                    // --- SYNC FUNCTION ---
                     async updateLiveSession(status, timeLeft = null, livesOverride = null) {
-                        if(!this.isPlayer) return; // Only player updates DB
+                        if(!this.isPlayer) return;
 
                         try {
                             const payload = {
@@ -528,8 +523,7 @@
                                 payload.current_question_hint = this.currentQ.hints[this.hintIdx] || this.currentQ.hints[0];
                                 payload.hint_index = this.hintIdx;
                                 payload.lives_remaining = livesOverride !== null ? livesOverride : this.lives;
-                                payload.timer_remaining = timeLeft !== null ? timeLeft : (this.isPlaying ? 30 : 0); // Default or current
-                                // Sync what user typed in text bar
+                                payload.timer_remaining = timeLeft !== null ? timeLeft : (this.isPlaying ? 30 : 0);
                                 const textVal = window.app.ui.els.manualInput.value;
                                 if(textVal) payload.last_input = textVal;
                             }
@@ -543,42 +537,55 @@
                     channel: null,
                     
                     async startWatching() {
-                        const name = document.getElementById('adminWatchInput').value.trim();
-                        if (!name) return alert("Enter player name");
-                        
-                        window.app.game.isPlayer = false; // Set to admin mode
+                        this.isPlayer = false;
                         window.app.ui.setAdminMode(true);
-                        window.app.ui.showScreen('gameScreen');
                         
+                        // 1. Check for existing active game
                         const { data, error } = await supabaseClient
                             .from('live_sessions')
                             .select('*')
-                            .eq('user_name', name)
+                            .eq('user_name', PLAYER_ID)
                             .single();
                         
-                        if (data) this.syncUI(data);
-                        else alert("Player not found or game not started.");
+                        // 2. If game is playing, show it immediately
+                        if (data && data.status === 'playing') {
+                            this.syncUI(data);
+                            window.app.ui.showScreen('gameScreen');
+                        } else {
+                            // 3. If not, show Waiting Screen
+                            window.app.ui.showScreen('adminWaitingScreen');
+                        }
 
+                        // 4. Subscribe to changes
                         if (this.channel) this.channel.unsubscribe();
 
                         this.channel = supabaseClient
-                            .channel(`live-admin-${name}`)
-                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
-                                this.syncUI(payload.new);
+                            .channel(`admin-monitor`)
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${PLAYER_ID}` }, (payload) => {
+                                if(payload.new.status === 'playing') {
+                                    this.syncUI(payload.new);
+                                    window.app.ui.showScreen('gameScreen');
+                                } else if (payload.new.status === 'finished') {
+                                    // Keep showing game or switch to result? Let's stick to game screen but state is finished
+                                    this.syncUI(payload.new);
+                                    window.app.ui.showScreen('gameScreen');
+                                }
                             })
-                            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
-                                this.syncUI(payload.new);
+                            // Listen for INSERT (New Game Start)
+                            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${PLAYER_ID}` }, (payload) => {
+                                if(payload.new.status === 'playing') {
+                                    this.syncUI(payload.new);
+                                    window.app.ui.showScreen('gameScreen');
+                                }
                             })
                             .subscribe();
                     },
 
                     syncUI(data) {
-                        // Update Stats
                         window.app.ui.els.scoreVal.textContent = data.current_score;
                         window.app.ui.els.qCounter.textContent = `${data.question_number}/10`;
                         window.app.ui.els.livesCount.textContent = data.lives_remaining;
                         
-                        // Update Timer
                         if(data.timer_remaining >= 0) {
                             const pct = (data.timer_remaining / 30) * 100;
                             window.app.ui.els.timerBar.style.width = `${pct}%`;
@@ -586,26 +593,17 @@
                             else window.app.ui.els.timerBar.style.backgroundColor = 'var(--success)';
                         }
 
-                        // Update Hint
                         if (data.status === 'playing' && data.current_question_hint) {
                             window.app.ui.els.hintDisplay.textContent = data.current_question_hint;
-                            // Simulate next hint button state
-                            window.app.ui.els.nextHintBtn.disabled = (data.hint_index > 0); // Simplification
+                            window.app.ui.els.nextHintBtn.disabled = (data.hint_index > 0);
                             window.app.ui.els.nextHintBtn.textContent = data.hint_index > 0 ? "Next Hint (Locked)" : "Show Hint 1";
-                        } else if (data.status === 'finished') {
-                            window.app.ui.hintDisplay.textContent = "Game Over";
-                            // Show result screen if finished? For now, stick to syncing the game card.
                         }
 
-                        // Update Text Input (What player typed)
                         if(data.last_input) {
                             window.app.ui.els.manualInput.value = data.last_input;
                         }
                         
-                        // Update Transcript
-                        if(data.status === 'playing') {
-                            window.app.ui.els.transcript.textContent = "Live View...";
-                        }
+                        window.app.ui.els.transcript.textContent = "Live View...";
                     }
                 };
 
@@ -658,7 +656,6 @@
                     if(e.key === 'Enter') submitText();
                 });
                 
-                // Sync text input as user types for Admin to see
                 manualInput.addEventListener('input', () => {
                    if(window.app.game.isPlayer) window.app.game.updateLiveSession('playing');
                 });
