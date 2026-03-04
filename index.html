@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Quiz Pro</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #818cf8;
+            --secondary: #c084fc;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #4ade80;
+            --danger: #f87171;
+            --radius: 20px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        /* --- Glass Card Style --- */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        h1 { font-weight: 800; font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(to right, #818cf8, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-weight: 600; margin-bottom: 20px; }
+
+        /* --- Inputs & Buttons --- */
+        input {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4);
+            margin-bottom: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(129, 140, 248, 0.6); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            box-shadow: none;
+            border: 1px solid var(--glass-border);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+        /* --- Screens --- */
+        .screen { display: none; animation: slideUp 0.5s ease; }
+        .screen.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- HUD --- */
+        .hud-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .hud-item {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .hud-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .hud-val { font-size: 1.2rem; font-weight: bold; color: white; }
+
+        /* --- Timer --- */
+        .timer-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 25px; }
+        .timer-fill { height: 100%; background: var(--success); width: 100%; transition: width 1s linear, background 0.3s; }
+
+        /* --- Hint Box --- */
+        .hint-box {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            border: 1px dashed var(--glass-border);
+        }
+        .correct-reveal { font-size: 2rem; color: var(--success); font-weight: 800; margin-top: 10px; text-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+        .wrong-reveal { font-size: 2rem; color: var(--danger); font-weight: 800; margin-top: 10px; }
+
+        /* --- Mic --- */
+        .mic-btn {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid var(--primary);
+            color: white; font-size: 2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto; transition: all 0.3s;
+        }
+        .mic-btn.listening { background: var(--primary); box-shadow: 0 0 30px var(--primary); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* --- Admin Panel --- */
+        .admin-dashboard { text-align: left; }
+        .stat-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
+        .live-indicator { display: inline-block; width: 10px; height: 10px; background: var(--danger); border-radius: 50%; margin-right: 8px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+        
+        .transcript { min-height: 24px; color: var(--text-muted); margin-top: 15px; font-style: italic; font-size: 0.9rem; }
+
+        /* --- Helper Classes --- */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mt-2 { margin-top: 20px; }
+
+    </style>
+</head>
+<body>
+
+    <main>
+        <!-- 1. LANDING SCREEN -->
+        <div id="landingScreen" class="screen active">
+            <div class="glass-card">
+                <h1>Voice Quiz</h1>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">Real-time Multiplayer Experience</p>
+                
+                <button class="btn" onclick="window.app.ui.showScreen('nameScreen');">Play as Player</button>
+                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('adminLoginScreen');">Admin Watch Mode</button>
+            </div>
+        </div>
+
+        <!-- 2. PLAYER NAME INPUT -->
+        <div id="nameScreen" class="screen">
+            <div class="glass-card">
+                <h2>Who are you?</h2>
+                <input type="text" id="playerNameInput" placeholder="Enter Nickname" maxlength="12">
+                <button class="btn" onclick="window.app.game.initGame()">Start Game</button>
+                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('landingScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- 3. GAME SCREEN -->
+        <div id="gameScreen" class="screen">
+            <div class="glass-card">
+                <!-- HUD -->
+                <div class="hud-grid">
+                    <div class="hud-item">
+                        <span class="hud-label">Question</span>
+                        <span class="hud-val" id="qCounter">1/10</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Score</span>
+                        <span class="hud-val" id="scoreVal" style="color: var(--success)">0</span>
+                    </div>
+                </div>
+
+                <!-- Timer -->
+                <div class="timer-track">
+                    <div class="timer-fill" id="timerBar"></div>
+                </div>
+
+                <!-- Hint/Result Area -->
+                <div class="hint-box" id="hintDisplay">Ready...</div>
+                
+                <button id="nextHintBtn" class="btn btn-secondary" style="width: auto; padding: 8px 20px; font-size: 0.9rem;" onclick="window.app.game.revealNextHint()">Next Hint</button>
+                <div style="margin-bottom: 15px; color: var(--secondary); font-weight: bold;">Lives: <span id="livesCount">3</span></div>
+
+                <!-- Mic & Transcript -->
+                <div id="gameControls">
+                    <button class="mic-btn" id="micBtn">🎤</button>
+                    <div class="transcript" id="transcript">Tap mic to speak</div>
+                </div>
+
+                <!-- NEXT BUTTON (Hidden by default) -->
+                <div id="nextBtnContainer" class="hidden" style="margin-top: 20px;">
+                    <button class="btn" id="nextQuestionBtn" onclick="window.app.game.nextQuestion()">Next Question ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. RESULT SCREEN -->
+        <div id="resultScreen" class="screen">
+            <div class="glass-card">
+                <h2 id="resultTitle">Quiz Over!</h2>
+                <div style="font-size: 4rem; font-weight: 800; color: var(--primary); margin: 20px 0;" id="finalScore">0</div>
+                <p id="saveStatus" style="color: var(--text-muted); margin-bottom: 20px;">Saving score...</p>
+                <button class="btn" onclick="location.reload()">Play Again</button>
+            </div>
+        </div>
+
+        <!-- 5. ADMIN LOGIN -->
+        <div id="adminLoginScreen" class="screen">
+            <div class="glass-card">
+                <h2>Admin Panel</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Watch a player live</p>
+                <input type="text" id="adminWatchInput" placeholder="Enter Player Name">
+                <button class="btn" onclick="window.app.admin.startWatching()">Watch Live</button>
+                <button class="btn btn-secondary" onclick="window.app.ui.showScreen('landingScreen')">Back</button>
+            </div>
+        </div>
+
+        <!-- 6. ADMIN DASHBOARD -->
+        <div id="adminDashboardScreen" class="screen">
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Live Match</h2>
+                    <button class="btn-secondary" style="width: auto; padding: 5px 15px; font-size: 0.8rem; border-radius: 10px;" onclick="location.reload()">Exit</button>
+                </div>
+                
+                <div class="stat-row">
+                    <span style="color: var(--text-muted)">Player</span>
+                    <span style="font-weight: bold; font-size: 1.2rem;" id="adminPlayerName">--</span>
+                </div>
+                <div class="stat-row">
+                    <span>Status</span>
+                    <span id="adminStatus" style="font-weight: bold;">Searching...</span>
+                </div>
+                <div class="stat-row">
+                    <span>Current Question</span>
+                    <span id="adminQ">0/10</span>
+                </div>
+                <div class="stat-row" style="border: none;">
+                    <span>Score</span>
+                    <span id="adminScore" style="font-size: 1.5rem; color: var(--success);">0</span>
+                </div>
+
+                <div class="mt-2 text-center" style="color: var(--text-muted); font-size: 0.8rem;">
+                    <span class="live-indicator"></span>Live updates active
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- APP CONTAINER ---
+        // We wrap everything in 'window.app' to ensure global access
+        window.app = {};
+
+        window.onload = function() {
+            try {
+                // 1. Initialize Libraries
+                let supabaseClient = null;
+                if (typeof supabase !== 'undefined') {
+                    supabaseClient = supabase.createClient("https://worcmjutlantjutpdsjq.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvcmNtanV0bGFudGp1dHBkc2pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODczNzIsImV4cCI6MjA4NTM2MzM3Mn0.Od0wLqh0xGxGWiDA3SDHybClPb4SZanbHu6p0wm_KUU");
+                } else {
+                    console.error("Supabase library failed to load.");
+                    alert("Error: Could not load Game Library. Please check your internet connection.");
+                    return; 
+                }
+
+                // --- DEMO DATA ---
+                const DEMO_DATA = [
+                    { answer: "Paris", hints: ["Capital of France", "Eiffel Tower", "City of Light", "Seine River", "Art Museum"] },
+                    { answer: "Apple", hints: ["Fruit", "Red or Green", "Grows on trees", "Tech Company", "Keeps doctor away"] },
+                    { answer: "Guitar", hints: ["Instrument", "Six strings", "Used in rock", "Has a neck", "Fender makes it"] },
+                    { answer: "Moon", hints: ["Space object", "Orbits Earth", "Changes shape", "Neil Armstrong", "Tides"] },
+                    { answer: "Python", hints: ["Programming language", "Named after a snake", "Simple syntax", "Used in AI", "Guido created it"] },
+                    { answer: "Pizza", hints: ["Italian food", "Round shape", "Cheese on top", "Oven baked", "Pepperoni topping"] },
+                    { answer: "Lion", hints: ["Big cat", "King of jungle", "Roars", "Mane", "Africa"] },
+                    { answer: "Ocean", hints: ["Large water body", "Salty", "Pacific is one", "Blue", "Fish live here"] },
+                    { answer: "Soccer", hints: ["Sport", "Kick ball", "World Cup", "Goal keeper", "11 players"] },
+                    { answer: "Coffee", hints: ["Drink", "Caffeine", "Hot", "Beans", "Morning routine"] }
+                ];
+
+                // --- UI MANAGER ---
+                window.app.ui = {
+                    els: {
+                        timerBar: document.getElementById('timerBar'),
+                        hintDisplay: document.getElementById('hintDisplay'),
+                        qCounter: document.getElementById('qCounter'),
+                        scoreVal: document.getElementById('scoreVal'),
+                        livesCount: document.getElementById('livesCount'),
+                        transcript: document.getElementById('transcript'),
+                        micBtn: document.getElementById('micBtn'),
+                        nextHintBtn: document.getElementById('nextHintBtn'),
+                        gameControls: document.getElementById('gameControls'),
+                        nextBtnContainer: document.getElementById('nextBtnContainer'),
+                        nextQuestionBtn: document.getElementById('nextQuestionBtn'),
+                        finalScore: document.getElementById('finalScore'),
+                        saveStatus: document.getElementById('saveStatus'),
+                        adminPlayerName: document.getElementById('adminPlayerName'),
+                        adminStatus: document.getElementById('adminStatus'),
+                        adminQ: document.getElementById('adminQ'),
+                        adminScore: document.getElementById('adminScore')
+                    },
+                    showScreen(id) {
+                        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                        const target = document.getElementById(id);
+                        if(target) target.classList.add('active');
+                        else console.error("Screen not found:", id);
+                    },
+                    resetForQuestion() {
+                        this.els.hintDisplay.style.background = "rgba(255,255,255,0.05)";
+                        this.els.hintDisplay.innerHTML = "Loading...";
+                        this.els.transcript.textContent = "Tap mic to speak";
+                        this.els.transcript.style.color = "var(--text-muted)";
+                        this.els.gameControls.classList.remove('hidden');
+                        this.els.nextBtnContainer.classList.add('hidden');
+                        this.els.nextHintBtn.classList.remove('hidden');
+                        this.els.micBtn.classList.remove('hidden');
+                    },
+                    showRoundEnd(isWin, answer) {
+                        this.els.gameControls.classList.add('hidden'); // Hide Mic
+                        this.els.nextHintBtn.classList.add('hidden');   // Hide Hint Button
+                        
+                        // Show Next Button
+                        this.els.nextBtnContainer.classList.remove('hidden');
+
+                        if (isWin) {
+                            this.els.hintDisplay.innerHTML = `<span class="correct-reveal">Correct!</span>`;
+                            this.els.transcript.textContent = "Well done!";
+                            this.els.transcript.style.color = "var(--success)";
+                        } else {
+                            this.els.hintDisplay.style.background = "rgba(248, 113, 113, 0.1)";
+                            this.els.hintDisplay.innerHTML = `<div>Answer:</div><div class="wrong-reveal">${answer}</div>`;
+                            this.els.transcript.textContent = "Better luck next time.";
+                            this.els.transcript.style.color = "var(--danger)";
+                        }
+                    }
+                };
+
+                // --- GAME ENGINE ---
+                window.app.game = {
+                    data: [],
+                    idx: 0,
+                    score: 0,
+                    lives: 3,
+                    hintIdx: 0,
+                    currentQ: null,
+                    timer: null,
+                    playerName: "",
+                    isPlaying: false,
+
+                    async initGame() {
+                        this.playerName = document.getElementById('playerNameInput').value.trim();
+                        if (!this.playerName) return alert("Please enter a name!");
+
+                        // Fetch Data
+                        try {
+                            const { data: rows, error } = await supabaseClient.from('game_data').select('*');
+                            if (error) throw error;
+                            this.data = rows.length ? rows : DEMO_DATA;
+                        } catch (e) {
+                            console.warn("DB Error, using demo data", e);
+                            this.data = DEMO_DATA;
+                        }
+
+                        // Shuffle & Slice
+                        this.data = this.data.sort(() => 0.5 - Math.random()).slice(0, 10);
+                        this.idx = 0;
+                        this.score = 0;
+                        
+                        // Initialize Live Session
+                        await this.updateLiveSession('playing');
+
+                        window.app.ui.showScreen('gameScreen');
+                        this.loadQuestion();
+                    },
+
+                    loadQuestion() {
+                        if (this.idx >= 10) {
+                            this.endGame();
+                            return;
+                        }
+                        this.currentQ = this.data[this.idx];
+                        this.lives = 3;
+                        this.hintIdx = 0;
+                        this.isPlaying = true;
+
+                        window.app.ui.els.livesCount.textContent = this.lives;
+                        window.app.ui.els.qCounter.textContent = `${this.idx + 1}/10`;
+                        window.app.ui.els.scoreVal.textContent = this.score;
+                        window.app.ui.els.nextHintBtn.disabled = false;
+                        window.app.ui.els.nextHintBtn.textContent = "Show Hint 1";
+                        
+                        window.app.ui.resetForQuestion();
+                        this.showHint();
+                        this.startTimer(30);
+                        this.updateLiveSession('playing'); // Update DB
+                    },
+
+                    showHint() {
+                        window.app.ui.els.hintDisplay.textContent = this.currentQ.hints[this.hintIdx];
+                    },
+
+                    revealNextHint() {
+                        if (this.hintIdx < this.currentQ.hints.length - 1) {
+                            this.hintIdx++;
+                            this.showHint();
+                        }
+                        window.app.ui.els.nextHintBtn.disabled = (this.hintIdx >= this.currentQ.hints.length - 1);
+                    },
+
+                    startTimer(seconds) {
+                        let left = seconds;
+                        window.app.ui.els.timerBar.style.width = '100%';
+                        window.app.ui.els.timerBar.style.backgroundColor = 'var(--success)';
+                        
+                        clearInterval(this.timer);
+                        this.timer = setInterval(() => {
+                            left--;
+                            const pct = (left / seconds) * 100;
+                            window.app.ui.els.timerBar.style.width = `${pct}%`;
+                            
+                            if(left <= 10) window.app.ui.els.timerBar.style.backgroundColor = 'var(--danger)';
+
+                            if (left <= 0) {
+                                this.handleLoss("Time's up!");
+                            }
+                        }, 1000);
+                    },
+
+                    async handleGuess(text) {
+                        if (!this.isPlaying) return;
+                        
+                        const input = text.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+                        const answer = this.currentQ.answer.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+
+                        window.app.ui.els.transcript.textContent = `You said: "${text}"`;
+
+                        if (input === answer) {
+                            // WIN
+                            this.isPlaying = false;
+                            clearInterval(this.timer);
+                            const points = Math.max(0, 6 - this.hintIdx);
+                            this.score += points;
+                            if (typeof confetti !== 'undefined') {
+                                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                            }
+                            
+                            window.app.ui.showRoundEnd(true);
+                            await this.updateLiveSession('playing'); // Update score
+                        } else {
+                            // WRONG
+                            this.lives--;
+                            window.app.ui.els.livesCount.textContent = this.lives;
+                            if (this.lives <= 0) {
+                                this.handleLoss("Wrong!");
+                            } else {
+                                window.app.ui.els.transcript.textContent = "Wrong! Try again.";
+                                window.app.ui.els.transcript.style.color = "var(--danger)";
+                            }
+                        }
+                    },
+
+                    async handleLoss(reason) {
+                        this.isPlaying = false;
+                        clearInterval(this.timer);
+                        window.app.ui.showRoundEnd(false, this.currentQ.answer);
+                        await this.updateLiveSession('playing');
+                    },
+
+                    async nextQuestion() {
+                        this.idx++;
+                        this.loadQuestion();
+                    },
+
+                    async endGame() {
+                        window.app.ui.showScreen('resultScreen');
+                        window.app.ui.els.finalScore.textContent = this.score;
+                        await this.updateLiveSession('finished');
+
+                        try {
+                            await supabaseClient.from('user_scores').insert([{ user_name: this.playerName, score: this.score }]);
+                            window.app.ui.els.saveStatus.textContent = "Score Saved!";
+                        } catch (e) { console.error(e); window.app.ui.els.saveStatus.textContent = "Save Error"; }
+                    },
+
+                    // --- LIVE DB UPDATE ---
+                    async updateLiveSession(status) {
+                        try {
+                            await supabaseClient.from('live_sessions').upsert({
+                                user_name: this.playerName,
+                                current_score: this.score,
+                                current_question: this.idx + 1,
+                                status: status,
+                                last_updated: new Date()
+                            }, { onConflict: 'user_name' });
+                        } catch (e) { console.error("Live update failed", e); }
+                    }
+                };
+
+                // --- ADMIN LOGIC ---
+                window.app.admin = {
+                    channel: null,
+                    
+                    async startWatching() {
+                        const name = document.getElementById('adminWatchInput').value.trim();
+                        if (!name) return alert("Enter player name");
+                        
+                        window.app.ui.showScreen('adminDashboardScreen');
+                        window.app.ui.els.adminPlayerName.textContent = name;
+                        
+                        // Initial Fetch
+                        const { data, error } = await supabaseClient
+                            .from('live_sessions')
+                            .select('*')
+                            .eq('user_name', name)
+                            .single();
+                        
+                        if (data) this.updateDashboard(data);
+                        else window.app.ui.els.adminStatus.textContent = "Player not found";
+
+                        // Realtime Subscription
+                        if (this.channel) this.channel.unsubscribe();
+
+                        this.channel = supabaseClient
+                            .channel(`live-${name}`)
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
+                                this.updateDashboard(payload.new);
+                            })
+                            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${name}` }, (payload) => {
+                                this.updateDashboard(payload.new);
+                            })
+                            .subscribe();
+                    },
+
+                    updateDashboard(data) {
+                        window.app.ui.els.adminScore.textContent = data.current_score;
+                        window.app.ui.els.adminQ.textContent = `${data.current_question}/10`;
+                        window.app.ui.els.adminStatus.textContent = data.status.toUpperCase();
+                        window.app.ui.els.adminStatus.style.color = data.status === 'playing' ? 'var(--success)' : 'var(--text-muted)';
+                    }
+                };
+
+                // --- SPEECH RECOGNITION ---
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const r = new SpeechRecognition();
+                    r.continuous = false; r.lang = 'en-US';
+                    r.onstart = () => window.app.ui.els.micBtn.classList.add('listening');
+                    r.onend = () => window.app.ui.els.micBtn.classList.remove('listening');
+                    r.onresult = (e) => window.app.game.handleGuess(e.results[0][0].transcript);
+                    window.app.ui.els.micBtn.onclick = () => { if(window.app.game.isPlaying) r.start(); };
+                } else {
+                    window.app.ui.els.micBtn.style.display = 'none';
+                    window.app.ui.els.transcript.textContent = "Speech API not supported";
+                }
+
+                console.log("App Initialized Successfully");
+            } catch (err) {
+                console.error("Critical Initialization Error:", err);
+                alert("There was a problem loading the game. Please refresh the page.");
+            }
+        };
+    </script>
+</body>
+</html>
