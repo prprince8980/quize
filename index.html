@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Quiz (Single Player / Admin)</title>
+    <title>Voice Quiz (Player / Admin)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -53,6 +53,12 @@
             transition: transform 0.3s ease;
         }
 
+        /* Admin Distinct Style */
+        .admin-active .glass-card {
+            border: 2px solid var(--danger);
+            background: rgba(20, 10, 30, 0.7);
+        }
+
         h1 { font-weight: 800; font-size: 2.2rem; margin-bottom: 10px; background: linear-gradient(to right, #818cf8, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         h2 { font-weight: 600; margin-bottom: 20px; }
 
@@ -71,6 +77,7 @@
             border-radius: 50px; cursor: pointer; font-weight: 600; width: 100%;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4); margin-bottom: 10px;
+            text-decoration: none; display: inline-block;
         }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(129, 140, 248, 0.6); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -79,6 +86,12 @@
             background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid var(--glass-border);
         }
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        
+        .btn-admin {
+            background: var(--danger);
+            box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4);
+        }
+        .btn-admin:hover { background: #dc2626; box-shadow: 0 6px 20px rgba(248, 113, 113, 0.6); }
 
         /* Screens */
         .screen { display: none; animation: slideUp 0.5s ease; }
@@ -156,7 +169,9 @@
         .admin-badge {
             background: var(--danger); color: white; padding: 5px 10px; border-radius: 20px;
             font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 15px;
+            animation: blink 2s infinite;
         }
+        @keyframes blink { 50% { opacity: 0.6; } }
 
         /* Waiting Screen */
         .loading-spinner {
@@ -173,27 +188,36 @@
 <body>
 
     <main>
-        <!-- 1. LANDING SCREEN -->
+        <!-- 1. PLAYER LANDING SCREEN -->
         <div id="landingScreen" class="screen active">
             <div class="glass-card">
                 <h1>Voice Quiz</h1>
-                <p style="color: var(--text-muted); margin-bottom: 30px;">Real-time Multiplayer Experience</p>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">Select your role to begin</p>
+                
+                <!-- PLAYER BUTTON -->
                 <button class="btn" onclick="window.app.game.initGame()">Start Game (Player)</button>
-                <button class="btn btn-secondary" onclick="window.app.admin.startWatching()">Admin Watch Mode</button>
+                
+                <div style="margin: 20px 0; border-top: 1px solid rgba(255,255,255,0.1);"></div>
+                
+                <!-- ADMIN BUTTON -->
+                <button class="btn btn-admin" onclick="window.app.ui.enterAdminMode()">Admin Watch Mode</button>
             </div>
         </div>
 
-        <!-- 2. ADMIN WAITING SCREEN (Only shown if no game is active) -->
+        <!-- 2. ADMIN WAITING SCREEN -->
         <div id="adminWaitingScreen" class="screen">
             <div class="glass-card">
                 <div class="loading-spinner"></div>
-                <h2>Waiting for Player</h2>
-                <p style="color: var(--text-muted);">Monitoring for active game session...</p>
-                <button class="btn btn-secondary" style="margin-top:20px;" onclick="location.reload()">Exit</button>
+                <h2>Admin Dashboard</h2>
+                <p style="color: var(--text-muted);">Waiting for player to start game...</p>
+                <div style="margin-top: 20px; font-size: 0.9rem; color: var(--secondary);">
+                    Listening for session ID: <strong>player</strong>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: 20px;" onclick="window.location.href='.'">Exit Admin</button>
             </div>
         </div>
 
-        <!-- 3. GAME SCREEN (Used by BOTH Player and Admin) -->
+        <!-- 3. GAME SCREEN (Shared) -->
         <div id="gameScreen" class="screen">
             <div class="glass-card" id="gameCard">
                 
@@ -316,13 +340,19 @@
                         const target = document.getElementById(id);
                         if(target) target.classList.add('active');
                     },
+                    // NEW: Function to handle Admin Click
+                    enterAdminMode() {
+                        window.location.href = '?mode=admin';
+                    },
                     setAdminMode(isAdmin) {
                         if(isAdmin) {
                             this.els.gameCard.classList.add('admin-mode');
+                            document.body.classList.add('admin-active'); // Global style change
                             this.els.adminBadge.classList.remove('hidden');
-                            this.els.micBtn.classList.remove('listening'); // Stop visual pulse
+                            this.els.micBtn.classList.remove('listening'); 
                         } else {
                             this.els.gameCard.classList.remove('admin-mode');
+                            document.body.classList.remove('admin-active');
                             this.els.adminBadge.classList.add('hidden');
                         }
                     },
@@ -372,7 +402,6 @@
                     isPlayer: true,
 
                     async initGame() {
-                        // No Name Input anymore
                         try {
                             const { data: rows, error } = await supabaseClient.from('game_data').select('*');
                             if (error) throw error;
@@ -423,7 +452,7 @@
                         if (this.hintIdx < this.currentQ.hints.length - 1) {
                             this.hintIdx++;
                             this.showHint();
-                            this.updateLiveSession('playing'); // Sync hint index
+                            this.updateLiveSession('playing'); 
                         }
                         window.app.ui.els.nextHintBtn.disabled = (this.hintIdx >= this.currentQ.hints.length - 1);
                     },
@@ -540,23 +569,19 @@
                         this.isPlayer = false;
                         window.app.ui.setAdminMode(true);
                         
-                        // 1. Check for existing active game
                         const { data, error } = await supabaseClient
                             .from('live_sessions')
                             .select('*')
                             .eq('user_name', PLAYER_ID)
                             .single();
                         
-                        // 2. If game is playing, show it immediately
                         if (data && data.status === 'playing') {
                             this.syncUI(data);
                             window.app.ui.showScreen('gameScreen');
                         } else {
-                            // 3. If not, show Waiting Screen
                             window.app.ui.showScreen('adminWaitingScreen');
                         }
 
-                        // 4. Subscribe to changes
                         if (this.channel) this.channel.unsubscribe();
 
                         this.channel = supabaseClient
@@ -566,12 +591,10 @@
                                     this.syncUI(payload.new);
                                     window.app.ui.showScreen('gameScreen');
                                 } else if (payload.new.status === 'finished') {
-                                    // Keep showing game or switch to result? Let's stick to game screen but state is finished
                                     this.syncUI(payload.new);
                                     window.app.ui.showScreen('gameScreen');
                                 }
                             })
-                            // Listen for INSERT (New Game Start)
                             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_sessions', filter: `user_name=eq.${PLAYER_ID}` }, (payload) => {
                                 if(payload.new.status === 'playing') {
                                     this.syncUI(payload.new);
@@ -659,6 +682,17 @@
                 manualInput.addEventListener('input', () => {
                    if(window.app.game.isPlayer) window.app.game.updateLiveSession('playing');
                 });
+
+                // --- AUTO ROUTING BASED ON URL ---
+                const urlParams = new URLSearchParams(window.location.search);
+                const mode = urlParams.get('mode');
+
+                if (mode === 'admin') {
+                    window.app.admin.startWatching();
+                } else {
+                    // Default: Show Landing Screen for Player
+                    window.app.ui.showScreen('landingScreen');
+                }
 
                 console.log("App Initialized Successfully");
             } catch (err) {
